@@ -2,20 +2,30 @@
 package com.crio.warmup.stock;
 
 import com.crio.warmup.stock.dto.PortfolioTrade;
-
+import com.crio.warmup.stock.dto.TiingoCandle;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+
 import java.util.logging.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.springframework.web.client.RestTemplate;
 
 
 public class PortfolioManagerApplication {
@@ -48,11 +58,12 @@ public class PortfolioManagerApplication {
 
   // Note:
   // 1. You may need to copy relevant code from #mainReadQuotes to parse the Json.
-  // 2. Remember to get the latest quotes from Tiingo API.
+  // 2. Remember to get the latest quotes from Tiingo API. 
 
 
-
-
+  // TODO: CRIO_TASK_MODULE_REST_API
+  //  Find out the closing price of each stock on the end_date and return the list
+  //  of all symbols in ascending order by its close value on end date.
 
   // Note:
   // 1. You may have to register on Tiingo to get the api_token.
@@ -60,8 +71,6 @@ public class PortfolioManagerApplication {
   // 2. You can copy relevant code from #mainReadFile to parse the Json.
   // 3. Use RestTemplate#getForObject in order to call the API,
   //    and deserialize the results in List<Candle>
-
-
 
   private static void printJsonObject(Object object) throws IOException {
     Logger logger = Logger.getLogger(PortfolioManagerApplication.class.getCanonicalName());
@@ -128,6 +137,86 @@ public class PortfolioManagerApplication {
 
   // Note:
   // Remember to confirm that you are getting same results for annualized returns as in Module 3.
+  public static List<String> mainReadQuotes(String[] args) throws IOException, URISyntaxException {
+
+    HashMap<String, Double> map = new HashMap<String, Double>();
+    String endDate = args[1];
+
+    File trades = resolveFileFromResources(args[0]);
+    ObjectMapper objectMapper = getObjectMapper();
+    PortfolioTrade[] stocks = objectMapper.readValue(trades, PortfolioTrade[].class);
+    RestTemplate restTemplate = new RestTemplate();
+    
+    for (PortfolioTrade stock : stocks) {
+      LocalDate localDate = stock.getPurchaseDate();
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+      String startDate = localDate.format(formatter);
+
+      String url = "https://api.tiingo.com/tiingo/daily/" 
+          + stock.getSymbol() 
+          + "/prices?token=acd82756bb95c48fb77c514cfac69cae9a080550&startDate=" 
+          + startDate + "&endDate=" + endDate;
+
+          
+      String result = restTemplate.getForObject(url, String.class);
+      List<TiingoCandle> dailyStockData = objectMapper.readValue(result, 
+          new TypeReference<ArrayList<TiingoCandle>>() {});
+
+      //get currently processing stock symbol in for loop
+      String stockSymbol = stock.getSymbol();
+      //get end date closing price for the stock
+      Double endDateClose = dailyStockData.get(dailyStockData.size() - 1).getClose();
+      //put the stock symbol and end date closing pricing in hash map
+      map.put(stockSymbol, endDateClose);
+
+    }
+
+    //Result arraylist to store stock symbols with asc order of closing price
+    List<String> result = new ArrayList<String>();
+    //sort the hashmap according to values
+    HashMap<String, Double> hm = sortByValue(map);
+  
+    // Iterate through the hashmap
+    for (Map.Entry<String, Double> mapElement : hm.entrySet()) {
+      String key = (String)mapElement.getKey();
+      //add the key (symbol) to the result arraylist
+      result.add(key);
+    }
+
+
+
+    //https://api.tiingo.com/tiingo/daily/aapl/prices?token=acd82756bb95c48fb77c514cfac69cae9a080550&startDate=2012-1-1&endDate=2016-1-1 
+    return result;
+  }
+
+
+  public static HashMap<String, Double> sortByValue(HashMap<String, Double> hm) {
+    // Create a list from elements of HashMap
+    List<Map.Entry<String, Double>> list = 
+        new LinkedList<Map.Entry<String, Double>>(
+                hm.entrySet());
+ 
+    // Sort the list using lambda expression
+    Collections.sort(
+        list,
+        (i1,
+        i2) -> i1.getValue().compareTo(i2.getValue()));
+ 
+    // put data from sorted list to hashmap
+    HashMap<String, Double> temp = new LinkedHashMap<String, Double>();
+    for (Map.Entry<String, Double> aa : list) {
+      temp.put(aa.getKey(), aa.getValue());
+    }
+    return temp;
+  }
+
+
+
+
+
+
+
+
 
 
 
@@ -135,8 +224,10 @@ public class PortfolioManagerApplication {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
     ThreadContext.put("runId", UUID.randomUUID().toString());
 
-    printJsonObject(mainReadFile(args));
+    //printJsonObject(mainReadFile(args));
 
+
+    printJsonObject(mainReadQuotes(args));
 
 
   }
