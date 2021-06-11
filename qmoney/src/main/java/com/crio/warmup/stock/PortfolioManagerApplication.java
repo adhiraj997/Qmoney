@@ -1,11 +1,12 @@
 
 package com.crio.warmup.stock;
 
-
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
+import com.crio.warmup.stock.dto.TiingoCandle;
 import com.crio.warmup.stock.dto.TotalReturnsDto;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import java.util.logging.Logger;
 import java.nio.file.Files;
@@ -231,13 +234,50 @@ public class PortfolioManagerApplication {
   //  Use the function you just wrote #calculateAnnualizedReturns.
   //  Return the list of AnnualizedReturns sorted by annualizedReturns in descending order.
 
-  // Note:
+  // Note: 
   // 1. You may need to copy relevant code from #mainReadQuotes to parse the Json.
   // 2. Remember to get the latest quotes from Tiingo API.
 
   public static List<AnnualizedReturn> mainCalculateSingleReturn(String[] args)
       throws IOException, URISyntaxException {
-     return Collections.emptyList();
+    
+    ObjectMapper objectMapper = getObjectMapper();
+    List<PortfolioTrade> trades = Arrays
+        .asList(objectMapper.readValue(resolveFileFromResources(args[0]), PortfolioTrade[].class));
+
+    List<AnnualizedReturn> sortedByValue = calculateReturnHelper(args, trades);
+
+    //sort array based on annualized return
+    Collections.sort(sortedByValue, new Comparator<AnnualizedReturn>() {
+      public int compare(AnnualizedReturn t1, AnnualizedReturn t2) {
+        return (int) (t2.getAnnualizedReturn().compareTo(t1.getAnnualizedReturn()));
+      }
+    });
+
+    return sortedByValue;
+  }
+
+  public static List<AnnualizedReturn> calculateReturnHelper(String[] args,
+      List<PortfolioTrade> trades) throws IOException, URISyntaxException {
+
+    RestTemplate restTemplate = new RestTemplate();
+    List<AnnualizedReturn> annualizedReturn = new ArrayList<AnnualizedReturn>();
+    for(PortfolioTrade t : trades) {
+      String uri = "https://api.tiingo.com/tiingo/daily/" + t.getSymbol() + 
+          "/prices?token=acd82756bb95c48fb77c514cfac69cae9a080550" + "&startDate=" + 
+          t.getPurchaseDate().toString() + "&endDate=" + args[1];
+
+      TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+      if(results != null) {
+        LocalDate endDate = LocalDate.parse(args[1]);
+        annualizedReturn.add(calculateAnnualizedReturns(endDate, t,
+            results[0].getOpen(), 
+            results[results.length - 1].getClose())); 
+      }
+    }
+    return annualizedReturn;
+    
+
   }
 
   // TODO: CRIO_TASK_MODULE_CALCULATIONS
@@ -254,7 +294,17 @@ public class PortfolioManagerApplication {
 
   public static AnnualizedReturn calculateAnnualizedReturns(LocalDate endDate,
       PortfolioTrade trade, Double buyPrice, Double sellPrice) {
-      return new AnnualizedReturn("", 0.0, 0.0);
+
+    Double totalReturn = (sellPrice - buyPrice) / buyPrice;
+    
+    LocalDate startDate = trade.getPurchaseDate();
+    //Period intervalPeriod = Period.between(startDate, endDate);
+    //int years = intervalPeriod.getYears();
+    //OR
+    Double years = startDate.until(endDate, ChronoUnit.DAYS) / 365.24;
+    Double annualizedReturns = Math.pow(1 + totalReturn, 1/years) - 1;
+    return new AnnualizedReturn(trade.getSymbol(), annualizedReturns,
+        totalReturn);
   }
 
 
@@ -277,7 +327,6 @@ public class PortfolioManagerApplication {
 
 
     //printJsonObject(mainReadQuotes(args));
-
 
 
     printJsonObject(mainCalculateSingleReturn(args));
