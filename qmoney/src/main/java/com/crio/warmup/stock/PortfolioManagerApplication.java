@@ -1,13 +1,14 @@
 
 package com.crio.warmup.stock;
 
-
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
+import com.crio.warmup.stock.dto.TiingoCandle;
 import com.crio.warmup.stock.dto.TotalReturnsDto;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
 import com.crio.warmup.stock.portfolio.PortfolioManager;
 import com.crio.warmup.stock.portfolio.PortfolioManagerFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
@@ -349,8 +350,13 @@ public class PortfolioManagerApplication {
       throws Exception {
        String file = args[0];
        LocalDate endDate = LocalDate.parse(args[1]);
-       String contents = readFileAsString(file);
+       //String contents = readFileAsString(file); given from before
+       File contents = resolveFileFromResources(file);
        ObjectMapper objectMapper = getObjectMapper();
+       //PortfolioManagerFactory factory = new PortfolioManagerFactory();
+
+       PortfolioTrade[] portfolioTrades = objectMapper.readValue(contents, PortfolioTrade[].class);
+       PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager(new RestTemplate());
        return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
 
@@ -371,6 +377,9 @@ public class PortfolioManagerApplication {
 
 
     printJsonObject(mainCalculateReturnsAfterRefactor(args));
+
+    //to test, remove later
+    //printJsonObject(mainCalculateReturnsAfterRefactor(new String[] {"trades.json", "2019-12-12"}));
   }
 }
 

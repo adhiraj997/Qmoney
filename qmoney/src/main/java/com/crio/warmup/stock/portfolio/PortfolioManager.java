@@ -3,14 +3,16 @@ package com.crio.warmup.stock.portfolio;
 
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
+
+import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDate;
 import java.util.List;
 
 public interface PortfolioManager {
 
-
   //CHECKSTYLE:OFF
-  // TODO: CRIO_TASK_MODULE_REFACTOR
+  // TODO: CRIO_TASK_MODULE_REFACTOR 
   //  Refactor the code to fit below signature.
 
   // Note:

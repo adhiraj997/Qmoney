@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -27,7 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerImpl implements PortfolioManager {
 
-
+  RestTemplate restTemplate;
 
 
   // Caution: Do not delete or modify the constructor, or else your build will break!
@@ -42,13 +43,51 @@ public class PortfolioManagerImpl implements PortfolioManager {
   //    Copy your code from Module#3 PortfolioManagerApplication#calculateAnnualizedReturn
   //    into #calculateAnnualizedReturn function here and ensure it follows the method signature.
   // 2. Logic to read Json file and convert them into Objects will not be required further as our
-  //    clients will take care of it, going forward.
+  //    clients will take care of it, going forward. 
 
   // Note:
   // Make sure to exercise the tests inside PortfolioManagerTest using command below:
   // ./gradlew test --tests PortfolioManagerTest
 
   //CHECKSTYLE:OFF
+
+  public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate) {
+
+    List<AnnualizedReturn> annualizedReturn = new ArrayList<AnnualizedReturn>();
+
+    RestTemplate restTemplate = new RestTemplate();
+    for (PortfolioTrade t : portfolioTrades) {
+      String uri = buildUri(t.getSymbol(), t.getPurchaseDate(), endDate);
+      TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+
+      if (results != null) {
+        // List<Candle> candle = getStockQuote(t.getSymbol(), t.getPurchaseDate(),
+        // endDate);
+        annualizedReturn.add(calculateAnnualizedReturnsIndividual(endDate, t, results[0].getOpen(),
+            results[results.length - 1].getClose()));
+      }
+
+    }
+    Collections.sort(annualizedReturn, getComparator());
+
+    return annualizedReturn;
+
+  }
+
+  public static AnnualizedReturn calculateAnnualizedReturnsIndividual(LocalDate endDate,
+      PortfolioTrade trade, Double buyPrice, Double sellPrice) {
+
+    Double totalReturn = (sellPrice - buyPrice) / buyPrice;
+    
+    LocalDate startDate = trade.getPurchaseDate();
+    //Period intervalPeriod = Period.between(startDate, endDate);
+    //int years = intervalPeriod.getYears();
+    //OR
+    Double years = startDate.until(endDate, ChronoUnit.DAYS) / 365.24;
+    Double annualizedReturns = Math.pow(1 + totalReturn, 1/years) - 1;
+    return new AnnualizedReturn(trade.getSymbol(), annualizedReturns,
+        totalReturn);
+  }
 
 
 
@@ -66,11 +105,18 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
+
      return null;
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
-       String uriTemplate = "https:api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
-            + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+      //  String uriTemplate = "https:api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
+      //       + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+
+            String uri = "https://api.tiingo.com/tiingo/daily/" + symbol + 
+            "/prices?token=acd82756bb95c48fb77c514cfac69cae9a080550" + "&startDate=" + 
+            startDate.toString() + "&endDate=" + endDate.toString();
+
+            return uri;
   }
 }
