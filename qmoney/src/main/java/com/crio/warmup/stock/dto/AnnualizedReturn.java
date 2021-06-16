@@ -24,6 +24,4 @@ public class AnnualizedReturn {
   public Double getTotalReturns() {
     return totalReturns;
   }
-
-
 }
