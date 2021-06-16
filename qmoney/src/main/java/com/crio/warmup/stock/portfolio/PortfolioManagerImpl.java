@@ -51,20 +51,26 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   //CHECKSTYLE:OFF
 
-  public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate) {
+  public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate)
+      throws JsonProcessingException {
 
     List<AnnualizedReturn> annualizedReturn = new ArrayList<AnnualizedReturn>();
 
-    RestTemplate restTemplate = new RestTemplate();
+    //RestTemplate restTemplate = new RestTemplate();
     for (PortfolioTrade t : portfolioTrades) {
-      String uri = buildUri(t.getSymbol(), t.getPurchaseDate(), endDate);
-      TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+      List<Candle> candle = getStockQuote(t.getSymbol(), t.getPurchaseDate(), endDate);
+      // String uri = buildUri(t.getSymbol(), t.getPurchaseDate(), endDate);
+      // TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
 
-      if (results != null) {
-        // List<Candle> candle = getStockQuote(t.getSymbol(), t.getPurchaseDate(),
-        // endDate);
-        annualizedReturn.add(calculateAnnualizedReturnsIndividual(endDate, t, results[0].getOpen(),
-            results[results.length - 1].getClose()));
+      // if (results != null) {
+      //   annualizedReturn.add(calculateAnnualizedReturnsIndividual(endDate, t, results[0].getOpen(),
+      //       results[results.length - 1].getClose()));
+      // }
+
+      if(!candle.isEmpty()) {
+        annualizedReturn.add(calculateAnnualizedReturnsIndividual(endDate, t, 
+            candle.get(0).getOpen(), candle.get(candle.size() - 1).getClose()));
+
       }
 
     }
@@ -105,8 +111,12 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
+    
+    String uri = buildUri(symbol, from, to);
+    RestTemplate restTemplate = new RestTemplate();
+    List<Candle> results = Arrays.asList(restTemplate.getForObject(uri, Candle[].class));
 
-     return null;
+     return results;
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {

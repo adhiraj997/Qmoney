@@ -3,6 +3,7 @@ package com.crio.warmup.stock.portfolio;
 
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import org.springframework.web.client.RestTemplate;
 
@@ -20,7 +21,7 @@ public interface PortfolioManager {
   // The reason is, this service is going to get exposed as a library in future.
 
   List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades,
-      LocalDate endDate)
+      LocalDate endDate) throws JsonProcessingException
   ;
   //CHECKSTYLE:ON
 }
