@@ -310,33 +310,6 @@ public class PortfolioManagerApplication {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // TODO: CRIO_TASK_MODULE_REFACTOR
   //  Once you are done with the implementation inside PortfolioManagerImpl and
   //  PortfolioManagerFactory, create PortfolioManager using PortfolioManagerFactory.
@@ -366,15 +339,8 @@ public class PortfolioManagerApplication {
     ThreadContext.put("runId", UUID.randomUUID().toString());
 
     //printJsonObject(mainReadFile(args));
-
-
     //printJsonObject(mainReadQuotes(args));
-
-
     //printJsonObject(mainCalculateSingleReturn(args));
-
-
-
 
     printJsonObject(mainCalculateReturnsAfterRefactor(args));
 
