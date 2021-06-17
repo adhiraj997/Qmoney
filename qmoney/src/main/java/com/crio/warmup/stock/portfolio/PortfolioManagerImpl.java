@@ -114,9 +114,16 @@ public class PortfolioManagerImpl implements PortfolioManager {
     
     String uri = buildUri(symbol, from, to);
     RestTemplate restTemplate = new RestTemplate();
-    List<Candle> results = Arrays.asList(restTemplate.getForObject(uri, Candle[].class));
+    TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
 
-     return results;
+    if (results == null) {
+      return new ArrayList<Candle>();
+    } 
+    else {
+      List<Candle> stock = Arrays.asList(results);
+      return stock;
+    }
+
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
