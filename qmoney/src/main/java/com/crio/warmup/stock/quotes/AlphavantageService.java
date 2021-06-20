@@ -4,18 +4,31 @@ package com.crio.warmup.stock.quotes;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
+import com.crio.warmup.stock.dto.AlphavantageCandle;
 import com.crio.warmup.stock.dto.AlphavantageDailyResponse;
 import com.crio.warmup.stock.dto.Candle;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.web.client.RestTemplate;
 
 public class AlphavantageService implements StockQuotesService {
+  
+  private RestTemplate restTemplate;
+
+  protected AlphavantageService(RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
 
   // TODO: CRIO_TASK_MODULE_ADDITIONAL_REFACTOR
   //  Implement the StockQuoteService interface as per the contracts. Call Alphavantage service
@@ -37,10 +50,88 @@ public class AlphavantageService implements StockQuotesService {
   //    ./gradlew test --tests AlphavantageServiceTest
   //CHECKSTYLE:OFF
     //CHECKSTYLE:ON
+
+    public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
+    throws JsonProcessingException {
+
+      String uri = buildUri(symbol);
+      //RestTemplate restTemplate = new RestTemplate();
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule());
+      // AlphavantageDailyResponse response = 
+      //     restTemplate.getForObject(uri, AlphavantageDailyResponse.class);
+
+      String responseString = restTemplate.getForObject(uri, String.class);
+      AlphavantageDailyResponse response = objectMapper.readValue(responseString, 
+          AlphavantageDailyResponse.class);
+
+      Map<LocalDate, AlphavantageCandle> dailyPricesMap = response.getCandles();
+
+      //initializing Candle list
+      List<Candle> dailyPrices = new ArrayList<Candle> ();
+
+      Iterator<Map.Entry<LocalDate, AlphavantageCandle>> it = 
+          dailyPricesMap.entrySet().iterator();
+
+      while(it.hasNext()) {
+        Map.Entry<LocalDate, AlphavantageCandle> pair = it.next();
+        LocalDate curDate = pair.getKey();
+
+        //insert the AlphavantageCandle object to list if date lies between from and to 
+        if((curDate.isAfter(from) && curDate.isBefore(to)) || curDate.isEqual(from) 
+            || curDate.isEqual(to)) {
+
+          AlphavantageCandle avCandle = pair.getValue();
+          avCandle.setDate(curDate);
+
+          // Candle candle = new AlphavantageCandle(avCandle.getOpen(), avCandle.getClose()
+          //     , avCandle.getHigh(), avCandle.getLow(), avCandle.getDate());
+
+          dailyPrices.add(avCandle);
+        }
+
+        //if the date is greater than the end date, break the loop
+        // if(curDate.isAfter(to))
+        //   break;
+      }
+
+      Collections.sort(dailyPrices, new Comparator<Candle>() {
+        public int compare(Candle t1, Candle t2) {
+          return (int) (t1.getDate().compareTo(t2.getDate()));
+        }
+      });
+
+      return dailyPrices;
+
+      // private Comparator<AlphavantageCandle> getComparator() {
+      //   return Comparator.comparing(AlphavantageCandle::getDate);
+      // }
+      
+
+      
+
+      // if (results == null) {
+      //   return new ArrayList<Candle>();
+      // } else {
+      //   List<Candle> stock = Arrays.asList(results);
+      //   return stock;
+      // }
+
+
+    }
+
+
   // TODO: CRIO_TASK_MODULE_ADDITIONAL_REFACTOR
   //  1. Write a method to create appropriate url to call Alphavantage service. The method should
   //     be using configurations provided in the {@link @application.properties}.
   //  2. Use this method in #getStockQuote.
+
+  protected String buildUri(String symbol) {
+    String uri = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol="
+        + symbol + "&outputsize=full&apikey=98TPXQ6UO37PKX6R";
+
+    return uri;
+  }
 
 }
 

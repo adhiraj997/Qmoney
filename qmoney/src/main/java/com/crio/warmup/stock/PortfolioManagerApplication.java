@@ -329,7 +329,7 @@ public class PortfolioManagerApplication {
        //PortfolioManagerFactory factory = new PortfolioManagerFactory();
 
        PortfolioTrade[] portfolioTrades = objectMapper.readValue(contents, PortfolioTrade[].class);
-       PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager(new RestTemplate());
+       PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager("alpha", new RestTemplate());
        return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
   }
 
@@ -342,10 +342,11 @@ public class PortfolioManagerApplication {
     //printJsonObject(mainReadQuotes(args));
     //printJsonObject(mainCalculateSingleReturn(args));
 
-    printJsonObject(mainCalculateReturnsAfterRefactor(args));
+    //main function call
+    //printJsonObject(mainCalculateReturnsAfterRefactor(args));
 
     //to test, remove later
-    //printJsonObject(mainCalculateReturnsAfterRefactor(new String[] {"trades.json", "2019-12-12"}));
+    printJsonObject(mainCalculateReturnsAfterRefactor(new String[] {"trades.json", "2019-12-12"}));
   }
 }
 

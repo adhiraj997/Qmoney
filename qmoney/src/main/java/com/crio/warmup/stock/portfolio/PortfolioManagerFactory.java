@@ -11,16 +11,24 @@ public class PortfolioManagerFactory {
   //  Implement the method to return new instance of PortfolioManager.
   //  Remember, pass along the RestTemplate argument that is provided to the new instance.
 
-  // public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
-  //   return new PortfolioManagerImpl(restTemplate);
-  // }
-
-
-
-
+  @Deprecated  
   public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
+    //return new PortfolioManagerImpl(restTemplate);
 
+    //added below because spring app was failing 
+    StockQuoteServiceFactory stockQuoteServiceFactory = StockQuoteServiceFactory.INSTANCE;
+    StockQuotesService stockQuotesService = 
+        stockQuoteServiceFactory.getService("alpha", restTemplate);
+
+    return new PortfolioManagerImpl(stockQuotesService);
   }
+
+
+
+
+  // public static PortfolioManager getPortfolioManager(RestTemplate restTemplate) {
+  //   return null;
+  // }
 
   // TODO: CRIO_TASK_MODULE_ADDITIONAL_REFACTOR
   //  Implement the method to return new instance of PortfolioManager.
@@ -34,7 +42,12 @@ public class PortfolioManagerFactory {
 
    public static PortfolioManager getPortfolioManager(String provider,
      RestTemplate restTemplate) {
-     return null;
+    
+    StockQuoteServiceFactory stockQuoteServiceFactory = StockQuoteServiceFactory.INSTANCE;
+    StockQuotesService stockQuotesService = 
+        stockQuoteServiceFactory.getService(provider, restTemplate);
+
+    return new PortfolioManagerImpl(stockQuotesService);
    }
 
 }

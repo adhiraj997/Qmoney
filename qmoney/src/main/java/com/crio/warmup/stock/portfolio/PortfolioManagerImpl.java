@@ -8,6 +8,7 @@ import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.Candle;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.dto.TiingoCandle;
+import com.crio.warmup.stock.quotes.StockQuoteServiceFactory;
 import com.crio.warmup.stock.quotes.StockQuotesService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,12 +31,21 @@ import org.springframework.web.client.RestTemplate;
 public class PortfolioManagerImpl implements PortfolioManager {
 
   private RestTemplate restTemplate;
-
+  private StockQuotesService stockQuotesService;
 
   // Caution: Do not delete or modify the constructor, or else your build will break!
   // This is absolutely necessary for backward compatibility
+  @Deprecated
   protected PortfolioManagerImpl(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
+  }
+
+  protected PortfolioManagerImpl(StockQuotesService stockQuotesService) {
+      
+    //this.restTemplate = restTemplate;
+    this.stockQuotesService = stockQuotesService;
+
+
   }
 
 
@@ -58,7 +68,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
     List<AnnualizedReturn> annualizedReturn = new ArrayList<AnnualizedReturn>();
 
     //RestTemplate restTemplate = new RestTemplate();
-    for (PortfolioTrade t : portfolioTrades) {
+    for (PortfolioTrade t : portfolioTrades) { 
       List<Candle> candle = getStockQuote(t.getSymbol(), t.getPurchaseDate(), endDate);
       // String uri = buildUri(t.getSymbol(), t.getPurchaseDate(), endDate);
       // TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
@@ -97,8 +107,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
   }
 
 
-
-
+  //Comparator function to sort in descending 
   private Comparator<AnnualizedReturn> getComparator() {
     return Comparator.comparing(AnnualizedReturn::getAnnualizedReturn).reversed();
   }
@@ -113,17 +122,19 @@ public class PortfolioManagerImpl implements PortfolioManager {
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
     
-    String uri = buildUri(symbol, from, to);
-    RestTemplate restTemplate = new RestTemplate();
-    TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+    // String uri = buildUri(symbol, from, to);
+    // RestTemplate restTemplate = new RestTemplate();
+    // TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
 
-    if (results == null) {
-      return new ArrayList<Candle>();
-    } 
-    else {
-      List<Candle> stock = Arrays.asList(results);
-      return stock;
-    }
+    // if (results == null) {
+    //   return new ArrayList<Candle>();
+    // } 
+    // else {
+    //   List<Candle> stock = Arrays.asList(results);
+    //   return stock;
+    // }
+
+    return stockQuotesService.getStockQuote(symbol, from, to);
 
   }
 
