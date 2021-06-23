@@ -62,6 +62,9 @@ public class AlphavantageService implements StockQuotesService {
       //     restTemplate.getForObject(uri, AlphavantageDailyResponse.class);
 
       String responseString = restTemplate.getForObject(uri, String.class);
+      //below line is to test whether the response is a null string or not 
+      System.out.println(responseString);
+
       AlphavantageDailyResponse response = objectMapper.readValue(responseString, 
           AlphavantageDailyResponse.class);
 
