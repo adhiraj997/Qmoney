@@ -7,6 +7,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import com.crio.warmup.stock.dto.AlphavantageCandle;
 import com.crio.warmup.stock.dto.AlphavantageDailyResponse;
 import com.crio.warmup.stock.dto.Candle;
+import com.crio.warmup.stock.exception.StockQuoteServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.management.RuntimeErrorException;
+
 import org.springframework.web.client.RestTemplate;
 
 public class AlphavantageService implements StockQuotesService {
@@ -52,67 +56,90 @@ public class AlphavantageService implements StockQuotesService {
     //CHECKSTYLE:ON
 
     public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
-    throws JsonProcessingException {
+    throws JsonProcessingException, StockQuoteServiceException {
+    
+      try {
 
-      String uri = buildUri(symbol);
-      //RestTemplate restTemplate = new RestTemplate();
-      ObjectMapper objectMapper = new ObjectMapper();
-      objectMapper.registerModule(new JavaTimeModule());
-      // AlphavantageDailyResponse response = 
-      //     restTemplate.getForObject(uri, AlphavantageDailyResponse.class);
+        String uri = buildUri(symbol);
+        //RestTemplate restTemplate = new RestTemplate();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        // AlphavantageDailyResponse response = 
+        //     restTemplate.getForObject(uri, AlphavantageDailyResponse.class);
 
-      String responseString = restTemplate.getForObject(uri, String.class);
-      //below line is to test whether the response is a null string or not 
-      System.out.println(responseString);
+        String responseString = restTemplate.getForObject(uri, String.class);
+        //below line is to test whether the response is a null string or not 
+        System.out.println(responseString); 
 
-      AlphavantageDailyResponse response = objectMapper.readValue(responseString, 
-          AlphavantageDailyResponse.class);
+        AlphavantageDailyResponse response = objectMapper.readValue(responseString, 
+            AlphavantageDailyResponse.class);
 
-      Map<LocalDate, AlphavantageCandle> dailyPricesMap = response.getCandles();
+        Map<LocalDate, AlphavantageCandle> dailyPricesMap = response.getCandles();
 
-      //initializing Candle list
-      List<Candle> dailyPrices = new ArrayList<Candle> ();
+        //initializing Candle list
+        List<Candle> dailyPrices = new ArrayList<Candle> ();
 
-      Iterator<Map.Entry<LocalDate, AlphavantageCandle>> it = 
-          dailyPricesMap.entrySet().iterator();
+        Iterator<Map.Entry<LocalDate, AlphavantageCandle>> it = 
+            dailyPricesMap.entrySet().iterator();
 
-      while(it.hasNext()) {
-        Map.Entry<LocalDate, AlphavantageCandle> pair = it.next();
-        LocalDate curDate = pair.getKey();
+      
+      
 
-        //insert the AlphavantageCandle object to list if date lies between from and to 
-        if((curDate.isAfter(from) && curDate.isBefore(to)) || curDate.isEqual(from) 
-            || curDate.isEqual(to)) {
+        while(it.hasNext()) {
+          Map.Entry<LocalDate, AlphavantageCandle> pair = it.next();
+          LocalDate curDate = pair.getKey();
 
-          AlphavantageCandle avCandle = pair.getValue();
-          avCandle.setDate(curDate);
+          //insert the AlphavantageCandle object to list if date lies between from and to 
+          if((curDate.isAfter(from) && curDate.isBefore(to)) || curDate.isEqual(from) 
+              || curDate.isEqual(to)) {
 
-          // Candle candle = new AlphavantageCandle(avCandle.getOpen(), avCandle.getClose()
-          //     , avCandle.getHigh(), avCandle.getLow(), avCandle.getDate());
+            AlphavantageCandle avCandle = pair.getValue();
+            avCandle.setDate(curDate);
 
-          dailyPrices.add(avCandle);
+            // Candle candle = new AlphavantageCandle(avCandle.getOpen(), avCandle.getClose()
+            //     , avCandle.getHigh(), avCandle.getLow(), avCandle.getDate());
+
+            dailyPrices.add(avCandle);
+          }
+
+          //if the date is greater than the end date, break the loop
+          // if(curDate.isAfter(to))
+          //   break;
         }
 
-        //if the date is greater than the end date, break the loop
-        // if(curDate.isAfter(to))
-        //   break;
+        Collections.sort(dailyPrices, new Comparator<Candle>() {
+          public int compare(Candle t1, Candle t2) {
+            return (int) (t1.getDate().compareTo(t2.getDate()));
+          }
+        });
+
+        return dailyPrices;
       }
 
-      Collections.sort(dailyPrices, new Comparator<Candle>() {
-        public int compare(Candle t1, Candle t2) {
-          return (int) (t1.getDate().compareTo(t2.getDate()));
-        }
-      });
 
-      return dailyPrices;
+      catch(JsonProcessingException e) {
+        throw new StockQuoteServiceException("Can't process response", e);
+      }
 
-      // private Comparator<AlphavantageCandle> getComparator() {
-      //   return Comparator.comparing(AlphavantageCandle::getDate);
+      catch(NullPointerException e) {
+        throw new StockQuoteServiceException("No data returned", e);
+      }
+
+      catch(RuntimeException e) {
+        throw new StockQuoteServiceException("Runtime Exception", e); 
+      }
+      // catch(Exception e) {
+      //   if(responseString.isEmpty())
+      //     throw new StockQuoteServiceException("No data");
+        
+      //   else if(dailyPricesMap == null)
+      //     throw new StockQuoteServiceException("Can't process response", e);
+
+      //   else
+      //     throw new RuntimeException(e);
       // }
-      
 
       
-
       // if (results == null) {
       //   return new ArrayList<Candle>();
       // } else {

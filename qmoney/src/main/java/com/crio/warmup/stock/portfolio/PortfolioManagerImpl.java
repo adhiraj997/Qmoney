@@ -69,7 +69,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
   //CHECKSTYLE:OFF
 
   public List<AnnualizedReturn> calculateAnnualizedReturn(List<PortfolioTrade> portfolioTrades, LocalDate endDate)
-      throws JsonProcessingException {
+      throws JsonProcessingException, StockQuoteServiceException {
 
     List<AnnualizedReturn> annualizedReturn = new ArrayList<AnnualizedReturn>();
 
@@ -126,7 +126,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
 
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
-      throws JsonProcessingException {
+      throws JsonProcessingException, StockQuoteServiceException {
     
     // String uri = buildUri(symbol, from, to);
     // RestTemplate restTemplate = new RestTemplate();

@@ -33,22 +33,37 @@ public class TiingoService implements StockQuotesService {
 
 
 
-  public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to) throws JsonProcessingException {
-    String uri = buildUri(symbol, from, to);
-    ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.registerModule(new JavaTimeModule());
-    //TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+  public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to) throws JsonProcessingException
+      , StockQuoteServiceException {
 
-    String responseString = restTemplate.getForObject(uri, String.class);
-    // TiingoCandle[] results = objectMapper.readValue(responseString, 
-    //     TiingoCandle[].class);
-    List<TiingoCandle> results = objectMapper.readValue(responseString, 
-          new TypeReference<ArrayList<TiingoCandle>>() {});
-    if (results == null) {
-      return new ArrayList<Candle>();
-    } else {
-      List<Candle> stock = new ArrayList<Candle> (results);
-      return stock;
+    try {
+      String uri = buildUri(symbol, from, to);
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.registerModule(new JavaTimeModule());
+      //TiingoCandle[] results = restTemplate.getForObject(uri, TiingoCandle[].class);
+
+      String responseString = restTemplate.getForObject(uri, String.class);
+      // TiingoCandle[] results = objectMapper.readValue(responseString, 
+      //     TiingoCandle[].class);
+      List<TiingoCandle> results = objectMapper.readValue(responseString, 
+            new TypeReference<ArrayList<TiingoCandle>>() {});
+      if (results == null) {
+        return new ArrayList<Candle>();
+      } else {
+        List<Candle> stock = new ArrayList<Candle> (results);
+        return stock;
+      }
+    }
+    catch(JsonProcessingException e) {
+      throw new StockQuoteServiceException("Can't process response", e);
+    }
+
+    catch(NullPointerException e) {
+      throw new StockQuoteServiceException("No data returned", e);
+    }
+
+    catch(RuntimeException e) {
+      throw new StockQuoteServiceException("Runtime Exception", e); 
     }
 
   }
