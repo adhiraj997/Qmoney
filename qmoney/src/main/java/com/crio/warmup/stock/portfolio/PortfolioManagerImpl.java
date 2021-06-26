@@ -159,7 +159,7 @@ public class PortfolioManagerImpl implements PortfolioManager {
 
 
   public List<AnnualizedReturn> calculateAnnualizedReturnParallel(List<PortfolioTrade> portfolioTrades,
-      LocalDate endDate, int numThreads) throws InterruptedException, StockQuoteServiceException, ExecutionException {
+      LocalDate endDate, int numThreads) throws InterruptedException, StockQuoteServiceException {
 
     try {
       ExecutorService executor = Executors.newFixedThreadPool(numThreads);
