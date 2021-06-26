@@ -16,6 +16,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 
 /*
 This class is supposed to be used by assessments only.
@@ -42,10 +42,8 @@ class PortfolioManagerPerformanceTest {
 
   private String googlQuotes = "[{\"date\":\"2019-01-02T00:00:00.000Z\",\"close\":1054.68,"
       + "\"high\":1060.79,\"low\":1025.28,\"open\":1027.2,\"volume\":1593395,\"adjClose\":1054.68,"
-      + "\"adjHigh\":1060.79,\"adjLow\":1025.28,\"adjOpen\""
-      + ":1027.2,\"adjVolume\":1593395,\"divCash\""
-      + ":0.0,\"splitFactor\":1.0},{\"date\":\""
-      + "2019-01-03T00:00:00.000Z\",\"close\":1025.47,\"high\""
+      + "\"adjHigh\":1060.79,\"adjLow\":1025.28,\"adjOpen\"" + ":1027.2,\"adjVolume\":1593395,\"divCash\""
+      + ":0.0,\"splitFactor\":1.0},{\"date\":\"" + "2019-01-03T00:00:00.000Z\",\"close\":1025.47,\"high\""
       + ":1066.26,\"low\":1022.37,\"open\":1050.67,\"volume\":2097957,\"adjClose\":1025.47,"
       + "\"adjHigh\":1066.26,\"adjLow\":1022.37,\"adjOpen\":1050.67,\"adjVolume\":2097957,"
       + "\"divCash\":0.0,\"splitFactor\":1.0},{\"date\":\"2019-12-12T00:00:00.000Z\","
@@ -79,10 +77,9 @@ class PortfolioManagerPerformanceTest {
 
   @Test
   public void calculateExtrapolatedAnnualizedReturn()
-      throws JsonProcessingException, StockQuoteServiceException, InterruptedException {
+      throws JsonProcessingException, StockQuoteServiceException, InterruptedException, ExecutionException {
     runConcurrencyTest(false);
   }
-
 
   @Test
   public void calculateExtrapolatedAnnualizedReturnWithException()
@@ -97,8 +94,9 @@ class PortfolioManagerPerformanceTest {
   }
 
   private void runConcurrencyTest(boolean withException)
-      throws JsonProcessingException, StockQuoteServiceException, InterruptedException {
-    String moduleToRun = null;
+      throws JsonProcessingException, StockQuoteServiceException, InterruptedException, ExecutionException {
+    String moduleToRun = "ADDITIONAL_REFACTOR";
+  
 
 
     if (moduleToRun.equals("REFACTOR")) {

@@ -330,7 +330,8 @@ public class PortfolioManagerApplication {
 
        PortfolioTrade[] portfolioTrades = objectMapper.readValue(contents, PortfolioTrade[].class);
        PortfolioManager portfolioManager = PortfolioManagerFactory.getPortfolioManager("alpha", new RestTemplate());
-       return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
+       //return portfolioManager.calculateAnnualizedReturn(Arrays.asList(portfolioTrades), endDate);
+       return portfolioManager.calculateAnnualizedReturnParallel(Arrays.asList(portfolioTrades), endDate, 3);
   }
 
 

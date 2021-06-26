@@ -83,7 +83,7 @@ class PortfolioManagerTest {
   public void calculateExtrapolatedAnnualizedReturn()
       throws Exception {
     //given
-    String moduleToRun = null;
+    String moduleToRun = "ADDITIONAL_REFACTOR";
 
 
     if (moduleToRun.equals("REFACTOR")) {
